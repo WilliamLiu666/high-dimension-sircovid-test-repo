@@ -7,6 +7,9 @@ output: pdf_document
 HMC = function (U, grad_U, epsilon, L, current_q)
 {
   q = current_q
+  ### a line to reject state with a given gradient, a way of restraining to the positive value of q
+  ### in the case of the exponential case, probably not the best way of doing it
+  if(grad_U(q)< -1e5) return (current_q)
   p = rnorm(length(q),0,1) # independent standard normal variates
   current_p = p
   
@@ -70,11 +73,12 @@ U = function(x){
 }
 
 grad_U = function(x) {
-  if(x>0){
+  if(x>=0){
     return (1)
   }
   else{
-    return (0)
+    ### a coding for "reject" sample, actually the exponential is NOT define for x<0
+    return (-1.5e5)
   }
 }
 
