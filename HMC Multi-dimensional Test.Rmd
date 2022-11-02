@@ -1,0 +1,158 @@
+---
+title: "R Notebook"
+output: pdf_document
+---
+
+```{r}
+HMC = function (U, grad_U, epsilon, L, current_q)
+{
+  q = current_q
+  ### a line to reject state with a given gradient, a way of restraining to the positive value of q
+  ### in the case of the exponential case, probably not the best way of doing it
+  if(norm(grad_U(q)< -1e5)) return (current_q)
+  p = rnorm(length(q),0,1) # independent standard normal variates
+  current_p = p
+  
+  # Make a half step for momentum at the beginning
+  p = p - epsilon * grad_U(q) / 2
+  
+  # Alternate full steps for position and momentum
+  for (i in 1:L)
+  {
+    # Make a full step for the position
+    q = q + epsilon * p
+    # Make a full step for the momentum, except at end of trajectory
+    if (i!=L) p = p - epsilon * grad_U(q)
+  }
+  
+  # Make a half step for momentum at the end.
+  p = p - epsilon * grad_U(q) / 2
+  
+  # Negate momentum at end of trajectory to make the proposal symmetric
+  p = -p
+  
+  # Evaluate potential and kinetic energies at start and end of trajectory
+  current_U = U(current_q)
+  current_K = sum(current_p^2) / 2
+  proposed_U = U(q)
+  proposed_K = sum(p^2) / 2
+  
+  # Accept or reject the state at end of trajectory, returning either
+  # the position at the end of the trajectory or the initial position
+  if (runif(1) < exp(current_U-proposed_U+current_K-proposed_K))
+  {
+    return (q) # accept
+  } 
+  else
+  {
+    return (current_q) # reject
+  }
+  
+}
+```
+
+
+# Test Multivariate Normal
+By taking 2-dimensional case with mean $\mu =\begin{pmatrix} 0\\0\end{pmatrix}$ and covariance $\Sigma = \begin{pmatrix} 1& 0.5 \\ 0.5&1\end{pmatrix}$
+$$
+f_X(x_1,x_2,x_3)\propto  \exp(-\frac{1}{2}\textbf x^T\Sigma^{-1} \textbf x)
+$$
+Thus
+$$
+U(x) = -\log(f_X) = \frac{1}{2}\textbf x^T\Sigma^{-1}\textbf x
+$$
+and
+$$
+\dot U(x) = \Sigma^{-1}\textbf x
+$$
+
+
+```{r}
+#define U and Grad_u
+U = function(x) t(x) %*% sigma_inv %*% x/2
+grad_U = function(x) sigma_inv %*% x
+
+#compute sigma invrse
+library(matlib)
+sigma = matrix(1,2,2)
+sigma[1,2] = 1/2
+sigma[2,1] = 1/2
+sigma_inv = inv(sigma)
+
+#initialize parameters
+N <- 10000
+q <- c(0,0)
+epsilon <- .001
+L <- 1000
+output <- matrix(0,N,2)
+
+#HMC
+for (i in 1:N){
+  q <- HMC (U, grad_U, epsilon, L, q)
+  output[i,1:2] <- q
+}
+```
+
+#Plot
+```{r}
+#discard the first 1000
+output = output[1000:N,1:2]
+hist(output[,1],main = 'First Feature',xlab = '')
+hist(output[,2],main = 'Second Feature',xlab = '')
+
+#acf
+acf(output[,1],main = 'First Feature ACF',xlab = '')
+acf(output[,2],main = 'Second Feature ACF',xlab = '')
+
+#2d plot
+plot(output[,1],output[,2],main = '2D plot',xlab = 'first feature', ylab = 'second feature')
+```
+
+# How L and $\epsilon$ affect the ACF
+## L=100,$\epsilon$=0.001
+```{r}
+#initialize parameters
+N <- 10000
+q <- c(0,0)
+epsilon <- .001
+L <- 100
+output <- matrix(0,N,2)
+
+#HMC
+for (i in 1:N){
+  q <- HMC (U, grad_U, epsilon, L, q)
+  output[i,1:2] <- q
+}
+
+#discard the first 1000
+output = output[1000:N,1:2]
+
+#acf
+acf(output[,1],main = 'First Feature ACF',xlab = '')
+acf(output[,2],main = 'Second Feature ACF',xlab = '')
+```
+
+## L=1000,$\epsilon$=0.01
+```{r}
+#initialize parameters
+N <- 10000
+q <- c(0,0)
+epsilon <- .01
+L <- 1000
+output <- matrix(0,N,2)
+
+#HMC
+for (i in 1:N){
+  q <- HMC (U, grad_U, epsilon, L, q)
+  output[i,1:2] <- q
+}
+
+#discard the first 1000
+output = output[1000:N,1:2]
+
+#acf
+acf(output[,1],main = 'First Feature ACF',xlab = '')
+acf(output[,2],main = 'Second Feature ACF',xlab = '')
+```
+
+

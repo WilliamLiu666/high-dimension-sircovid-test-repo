@@ -52,7 +52,8 @@ HMC = function (U, grad_U, epsilon, L, current_q)
 ```
 
 
-Test1: Exponential Distribution with $\lambda =1$
+# Test1: 
+Exponential Distribution with $\lambda =1$
 $$
 f(x) = e^{-x}\qquad x>0
 $$
@@ -83,7 +84,7 @@ grad_U = function(x) {
 }
 
 
-N <- 100000
+N <- 1000000
 q <- 0
 epsilon <- .01
 L <- 10
@@ -99,7 +100,8 @@ plot(output)
 hist(output[500:N])
 ```
 
-Test2: Standard Normal Distribution
+# Test2: 
+Standard Normal Distribution
 $$
 f(x) \propto  e^{-x^2/2}
 $$
@@ -113,10 +115,10 @@ $$
 U = function(x) x^2/2
 grad_U = function(x) x
 
-N <- 100000
+N <- 10000
 q <- 0
-epsilon <- .01
-L <- 10
+epsilon <- .001
+L <- 1000
 output <- rep(0,N)
 
 
@@ -124,15 +126,56 @@ for (i in 1:N){
   q <- HMC (U, grad_U, epsilon, L, q)
   output[i] <- q
 }
+```
 
-plot(output)
-hist(output[500:N])
+# Test3 Multivariate Normal
+By taking 3-dimensional case with zero mean.
+$$
+f_X(x_1,x_2,x_3)\propto \frac{1}{\sqrt{|\Sigma|}} \exp(-\frac{1}{2}\textbf x^T\Sigma^{-1} \textbf x)
+$$
+
+```{r}
+U = function(x) t(x) %*% sigma_inv %*% x/2
+grad_U = function(x) sigma_inv %*% x
+
+sigma_inv = diag(1,3,3)
+
+N <- 100000
+q <- c(0,0,0)
+epsilon <- .01
+L <- 10
+output <- matrix(0,N,3)
+
+
+for (i in 1:N){
+  q <- HMC (U, grad_U, epsilon, L, q)
+  output[i,1:3] <- q
+}
+plot(output[1000:N,1],output[1000:N,2])
 ```
 
 
+```{r}
+U = function(x) t(x) %*% sigma_inv %*% x/2
+grad_U = function(x) sigma_inv %*% x
+library(matlib)
+
+sigma = matrix(1,2,2)
+sigma[1,2] = 1/2
+sigma[2,1] = 1/2
+sigma_inv = inv(sigma)
+
+N <- 100000
+q <- c(0,0)
+epsilon <- .01
+L <- 10
+output <- matrix(0,N,2)
 
 
-
-
-
+for (i in 1:N){
+  q <- HMC (U, grad_U, epsilon, L, q)
+  output[i,1:2] <- q
+}
+plot(output[1000:N,1],output[1000:N,2])
+```
 
