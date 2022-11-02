@@ -55,7 +55,7 @@ HMC = function (U, grad_U, epsilon, L, current_q)
 # Test Multivariate Normal
 By taking 2-dimensional case with mean $\mu =\begin{pmatrix} 0\\0\end{pmatrix}$ and covariance $\Sigma = \begin{pmatrix} 1& 0.5 \\ 0.5&1\end{pmatrix}$
 $$
-f_X(x_1,x_2,x_3)\propto  \exp(-\frac{1}{2}\textbf x^T\Sigma^{-1} \textbf x)
+f_X(x_1,x_2)\propto  \exp(-\frac{1}{2}\textbf x^T\Sigma^{-1} \textbf x)
 $$
 Thus
 $$
@@ -94,7 +94,7 @@ for (i in 1:N){
 ```
 
 #Plot
-```{r}
+```{r,fig.width=4, fig.height=4}
 #discard the first 1000
 output = output[1000:N,1:2]
 hist(output[,1],main = 'First Feature',xlab = '')
@@ -110,7 +110,7 @@ plot(output[,1],output[,2],main = '2D plot',xlab = 'first feature', ylab = 'seco
 
 # How L and $\epsilon$ affect the ACF
 ## L=100,$\epsilon$=0.001
-```{r}
+```{r,fig.width=4, fig.height=4}
 #initialize parameters
 N <- 10000
 q <- c(0,0)
@@ -133,7 +133,7 @@ acf(output[,2],main = 'Second Feature ACF',xlab = '')
 ```
 
 ## L=1000,$\epsilon$=0.01
-```{r}
+```{r,fig.width=4, fig.height=4}
 #initialize parameters
 N <- 10000
 q <- c(0,0)
@@ -155,4 +155,41 @@ acf(output[,1],main = 'First Feature ACF',xlab = '')
 acf(output[,2],main = 'Second Feature ACF',xlab = '')
 ```
 
+# Comaprison with Gibbs Sampler
+$$
+\begin{pmatrix}x\\y\end{pmatrix}\sim N(\begin{pmatrix} 0\\0\end{pmatrix}, \begin{pmatrix} 1& 0.5 \\ 0.5&1\end{pmatrix})
+$$
+given $x_t$,
+$$
+Y_{t+1}|x_t\sim N(0.5x_t,1-0.5^2)
+$$
+$$
+X_{t+1}|y_{t+1}\sim N(0.5y_{t+1},1-0.5^2)
+$$
+```{r,fig.width=4, fig.height=4}
+x = rep(0,N)
+y = rep(0,N)
 
+for (i in 2:N){
+  y[i] = rnorm(1,.5*x[i-1],1-.5^2)
+  x[i] = rnorm(1,.5*y[i],1-.5^2)
+}
+```
+
+#Plot
+```{r,fig.width=4, fig.height=4}
+#discard first 1000 points
+x = x[1000:N]
+y = y[1000:N]
+
+#histgram
+hist(x,main = 'First Feature',xlab = '')
+hist(y,main = 'Second Feature',xlab = '')
+
+#acf
+acf(x,main = 'First Feature ACF',xlab = '')
+acf(y,main = 'Second Feature ACF',xlab = '')
+
+#2d plot
+plot(x,y,main = '2D plot',xlab = 'first feature', ylab = 'second feature')
+```
