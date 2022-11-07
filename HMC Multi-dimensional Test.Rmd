@@ -73,24 +73,24 @@ U = function(x) t(x) %*% sigma_inv %*% x/2
 grad_U = function(x) sigma_inv %*% x
 
 #compute sigma invrse
+d <- 10
 library(matlib)
-sigma = matrix(1,2,2)
-sigma[1,2] = 1/2
-sigma[2,1] = 1/2
+sigma = diag(1,d)
 sigma_inv = inv(sigma)
 
 #initialize parameters
 N <- 10000
-q <- c(0,0)
+q <- rep(0,d)
 epsilon <- .001
 L <- 1000
-output <- matrix(0,N,2)
+output <- matrix(0,N,d)
 
 #HMC
 for (i in 1:N){
   q <- HMC (U, grad_U, epsilon, L, q)
-  output[i,1:2] <- q
+  output[i,1:d] <- q
 }
+var(output[1:N,1])
 ```
 
 #Plot
@@ -176,7 +176,7 @@ for (i in 2:N){
 }
 ```
 
-#Plot
+# Plot
 ```{r,fig.width=4, fig.height=4}
 #discard first 1000 points
 x = x[1000:N]
@@ -193,3 +193,40 @@ acf(y,main = 'Second Feature ACF',xlab = '')
 #2d plot
 plot(x,y,main = '2D plot',xlab = 'first feature', ylab = 'second feature')
 ```
+
+# Random Walk
+```{r}
+library(mvtnorm)
+d <- 2
+N <- 10000
+h <- d^(-1/2)
+mean <- matrix(0,d,1)
+sigma <- diag(1,d)
+output <- matrix(0,N,d)
+output[1,1:d] <- rmvnorm(1,mean,sigma)
+
+for(i in 2:N){
+  x <- rmvnorm(1,output[i-1,1:d],sigma*h^2)
+  u <- runif(1)
+  a <- log(dmvnorm(x, mean, sigma))
+  b <- log(dmvnorm(output[i-1,1:d], mean, sigma))
+  if (log(u) < (a-b)){
+    output[i,1:d] = x
+  }
+  else{
+    output[i,1:d] = output[i-1,1:d]
+  }
+}
+var(output[1:N,1])
+```
+
+
+
+
+
+
+
+
+
+
+
